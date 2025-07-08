@@ -151,14 +151,17 @@ extension MainViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        messageView.updateView(for: .hidden)
         activityIndicator.stopAnimating()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        messageView.updateView(for: .hidden)
         activityIndicator.stopAnimating()
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        messageView.updateView(for: .error)
         activityIndicator.stopAnimating()
         print("@@@ load did fail with error: \(error)")
     }
