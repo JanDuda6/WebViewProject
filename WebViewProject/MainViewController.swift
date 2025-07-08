@@ -5,6 +5,7 @@
 //  Created by Jan Duda on 07/07/2025.
 //
 
+import LocalAuthentication
 import UIKit
 import WebKit
 
@@ -33,6 +34,14 @@ class MainViewController: UIViewController {
         activityLoader.color = .gray
         return activityLoader
     }()
+    
+    private let messageView: MessageView = {
+        let template = MessageView()
+        template.translatesAutoresizingMaskIntoConstraints = false
+        return template
+    }()
+    
+    private var isLoggedIn = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,6 +65,17 @@ class MainViewController: UIViewController {
             activityIndicator.centerYAnchor.constraint(equalTo: webView.centerYAnchor),
         ])
     }
+    
+    private func prepareNotifications() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    @objc private func appWillEnterForeground() {
+        if isLoggedIn {
+            messageView.updateView(for: .faceID)
+            authenticateUserWithFaceID()
+        }
+    }
 
     private func loadWebView() {
         if let url = URL(string: "https://konto.infakt.pl") {
@@ -64,11 +84,46 @@ class MainViewController: UIViewController {
             webView.load(request as URLRequest)
         }
     }
+    
+    private func authenticateUserWithFaceID() {
+        let context = LAContext()
+        var error: NSError?
+
+        if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
+            context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: "Auth with FaceID") { [weak self] success, _ in
+                DispatchQueue.main.async {
+                    if success {
+                        self?.messageView.updateView(for: .hidden)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - WebView
 
 extension MainViewController: WKNavigationDelegate {
+    
+    // Handle Camera permission
+    func webView(
+        _ webView: WKWebView,
+        requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+        initiatedByFrame frame: WKFrameInfo,
+        type: WKMediaCaptureType,
+        decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        decisionHandler(.grant)
+    }
+    
+    // Handle log in state
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        guard let urlString = webView.url?.absoluteString else { return }
+        if urlString.contains("konto") {
+            isLoggedIn = false
+        } else if urlString.contains("front") {
+            isLoggedIn = true
+        }
+    }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         activityIndicator.stopAnimating()
