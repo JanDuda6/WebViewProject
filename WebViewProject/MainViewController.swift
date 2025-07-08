@@ -6,6 +6,7 @@
 //
 
 import LocalAuthentication
+import Network
 import UIKit
 import WebKit
 
@@ -34,13 +35,13 @@ class MainViewController: UIViewController {
         activityLoader.color = .gray
         return activityLoader
     }()
-    
+
     private let messageView: MessageView = {
         let template = MessageView()
         template.translatesAutoresizingMaskIntoConstraints = false
         return template
     }()
-    
+
     private var isLoggedIn = false
 
     override func viewDidLoad() {
@@ -48,7 +49,9 @@ class MainViewController: UIViewController {
         prepareViews()
         loadWebView()
         checkInternetConnection()
+        prepareNotifications()
         view.backgroundColor = .white
+        messageView.delegate = self
     }
 
     private func prepareViews() {
@@ -65,7 +68,7 @@ class MainViewController: UIViewController {
             activityIndicator.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: webView.centerYAnchor),
         ])
-        
+
         webView.addSubview(messageView)
         NSLayoutConstraint.activate([
             messageView.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
@@ -74,7 +77,7 @@ class MainViewController: UIViewController {
             messageView.topAnchor.constraint(equalTo: webView.topAnchor),
         ])
     }
-    
+
     private func prepareNotifications() {
         NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
     }
@@ -93,10 +96,11 @@ class MainViewController: UIViewController {
             webView.load(request as URLRequest)
         }
     }
-    
+
     private func checkInternetConnection() {
         let monitor = NWPathMonitor()
         let queue = DispatchQueue(label: "NetworkMonitor")
+        monitor.start(queue: queue)
         monitor.pathUpdateHandler = { [weak self] path in
             DispatchQueue.main.async {
                 if path.status == .satisfied {
@@ -107,9 +111,8 @@ class MainViewController: UIViewController {
                 }
             }
         }
-        monitor.start(queue: queue)
     }
-    
+
     private func authenticateUserWithFaceID() {
         let context = LAContext()
         var error: NSError?
@@ -129,7 +132,6 @@ class MainViewController: UIViewController {
 // MARK: - WebView
 
 extension MainViewController: WKNavigationDelegate {
-    
     // Handle Camera permission
     func webView(
         _ webView: WKWebView,
@@ -139,7 +141,7 @@ extension MainViewController: WKNavigationDelegate {
         decisionHandler: @escaping (WKPermissionDecision) -> Void) {
         decisionHandler(.grant)
     }
-    
+
     // Handle log in state
     func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
         guard let urlString = webView.url?.absoluteString else { return }
@@ -160,9 +162,27 @@ extension MainViewController: WKNavigationDelegate {
         activityIndicator.stopAnimating()
     }
 
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        let nsError = error as NSError
+
+        // check for another error than no connection. No connection is handle in checkInternetConnection() method with reaction to connection reached
+        if nsError.domain == NSURLErrorDomain && nsError.code != NSURLErrorNotConnectedToInternet {
+            messageView.updateView(for: .error)
+            print("@@@ Provisional navigation failed: \(nsError.localizedDescription)")
+        }
+    }
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         messageView.updateView(for: .error)
         activityIndicator.stopAnimating()
         print("@@@ load did fail with error: \(error)")
+    }
+}
+
+// MARK: - MessageView
+
+extension MainViewController: MessageViewDelegate {
+    func didTapButton() {
+        webView.reload()
     }
 }

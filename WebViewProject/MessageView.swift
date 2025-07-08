@@ -23,7 +23,7 @@ class MessageView: UIView {
         label.numberOfLines = 0
         return label
     }()
-    
+
     private let retryButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("Try again", for: .normal)
@@ -34,7 +34,7 @@ class MessageView: UIView {
         button.backgroundColor = .gray
         return button
     }()
-    
+
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -60,7 +60,7 @@ class MessageView: UIView {
         imageView.image = UIImage(systemName: "faceid")
         return imageView
     }()
-    
+
     weak var delegate: MessageViewDelegate?
 
     override init(frame: CGRect) {
@@ -98,9 +98,8 @@ class MessageView: UIView {
 
     private func prepareView() {
         isHidden = true
-
         addSubview(stackView)
-
+        retryButton.addTarget(self, action: #selector(retryTapped), for: .touchUpInside)
         NSLayoutConstraint.activate([
             stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
             stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -119,7 +118,7 @@ class MessageView: UIView {
             imageView.heightAnchor.constraint(equalToConstant: 60),
         ])
     }
-    
+
     @objc func retryTapped() {
         delegate?.didTapButton()
     }
