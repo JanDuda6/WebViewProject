@@ -47,6 +47,7 @@ class MainViewController: UIViewController {
         super.viewDidLoad()
         prepareViews()
         loadWebView()
+        checkInternetConnection()
         view.backgroundColor = .white
     }
 
@@ -63,6 +64,14 @@ class MainViewController: UIViewController {
         NSLayoutConstraint.activate([
             activityIndicator.centerXAnchor.constraint(equalTo: webView.centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: webView.centerYAnchor),
+        ])
+        
+        webView.addSubview(messageView)
+        NSLayoutConstraint.activate([
+            messageView.bottomAnchor.constraint(equalTo: webView.bottomAnchor),
+            messageView.leadingAnchor.constraint(equalTo: webView.leadingAnchor),
+            messageView.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
+            messageView.topAnchor.constraint(equalTo: webView.topAnchor),
         ])
     }
     
@@ -83,6 +92,22 @@ class MainViewController: UIViewController {
             activityIndicator.startAnimating()
             webView.load(request as URLRequest)
         }
+    }
+    
+    private func checkInternetConnection() {
+        let monitor = NWPathMonitor()
+        let queue = DispatchQueue(label: "NetworkMonitor")
+        monitor.pathUpdateHandler = { [weak self] path in
+            DispatchQueue.main.async {
+                if path.status == .satisfied {
+                    self?.messageView.updateView(for: .hidden)
+                    self?.webView.reload()
+                } else {
+                    self?.messageView.updateView(for: .noInternet)
+                }
+            }
+        }
+        monitor.start(queue: queue)
     }
     
     private func authenticateUserWithFaceID() {

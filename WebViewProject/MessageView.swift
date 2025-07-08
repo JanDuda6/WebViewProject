@@ -8,10 +8,19 @@
 import UIKit
 
 enum MessageViewState {
-    case faceID, hidden
+    case faceID, hidden, noInternet
 }
 
 class MessageView: UIView {
+    
+    private let messageLabel: UILabel = {
+        let label = UILabel()
+        label.textAlignment = .center
+        label.font = UIFont.systemFont(ofSize: 17, weight: .medium)
+        label.numberOfLines = 0
+        return label
+    }()
+    
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
@@ -59,6 +68,10 @@ class MessageView: UIView {
             isHidden = false
         case .hidden:
             isHidden = true
+        case .noInternet:
+            stackView.addArrangedSubview(messageLabel)
+            messageLabel.text = "No internet connection. Try again later."
+            isHidden = false
         }
     }
 
