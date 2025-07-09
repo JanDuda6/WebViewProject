@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Network
 
 class MainViewModel {
     private let networkMonitorService: NetworkMonitorService
