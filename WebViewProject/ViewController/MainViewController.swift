@@ -115,14 +115,12 @@ extension MainViewController: WKNavigationDelegate {
         // check for another error than no connection. No connection is handle in viewModel method
         if nsError.domain == NSURLErrorDomain && nsError.code != NSURLErrorNotConnectedToInternet {
             messageView.updateView(for: .error)
-            print("did fail prov")
         }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         messageView.updateView(for: .error)
         activityIndicator.stopAnimating()
-        print("did fail")
     }
 }
 
