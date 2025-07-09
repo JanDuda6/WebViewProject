@@ -5,6 +5,7 @@ This project provides a basic integration with WKWebView, includes camera access
 
 ## Technologies & Features
 - WKWebView, Swift
+- MVVM
 - Local authentication (Local Authentication)
 - WebView camera permission
 - Project is prepared for external push notification
